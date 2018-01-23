@@ -31,7 +31,6 @@ def main(event, context):
             	"Metascore","imdbRating", "imdbVotes", "imdbID", "Type", "DVD",
             	"BoxOffice", "Production", "Website"])
 
-        #for x in data:
         f.writerow([data["Title"], data["Year"], data["Rated"], data["Released"], data["Runtime"], data["Genre"],
                	data["Director"], data["Writer"], data["Actors"], data["Language"], data["Country"], data["Awards"],
                	data["Poster"], data["Ratings"], data["Metascore"], data["imdbRating"], data["imdbVotes"],
@@ -39,7 +38,6 @@ def main(event, context):
         
         output.close()
         s3_client.upload_file('/tmp/file.csv', bucket, 'csv/' + key[:-5] + '.csv')
-        #s3_client.delete_object(Bucket=bucket, Key=key)
     except Exception as e:
         print(e)
         print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
