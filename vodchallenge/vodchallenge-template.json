@@ -1,0 +1,394 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "The AWS CloudFormation template for this Serverless application",
+    "Resources": {
+        "ConvertLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": "/aws/lambda/challenge-dev-convert"
+            }
+        },
+        "CronLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": "/aws/lambda/challenge-dev-cron"
+            }
+        },
+        "SlackLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": "/aws/lambda/challenge-dev-slack"
+            }
+        },
+        "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    "dev",
+                                    "challenge",
+                                    "lambda"
+                                ]
+                            ]
+                        },
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogStream"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/challenge-dev-convert:*"
+                                        },
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/challenge-dev-cron:*"
+                                        },
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/challenge-dev-slack:*"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/challenge-dev-convert:*:*"
+                                        },
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/challenge-dev-cron:*:*"
+                                        },
+                                        {
+                                            "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/challenge-dev-slack:*:*"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:*"
+                                    ],
+                                    "Resource": "arn:aws:s3:::moviesmetadata/*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:*"
+                                    ],
+                                    "Resource": "arn:aws:s3:::moviesmetadata"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:*"
+                                    ],
+                                    "Resource": "arn:aws:sns:eu-west-2:775056359239:*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Resource": [
+                                        "arn:aws:sns:eu-west-2:775056359239:ConvertLambdaError"
+                                    ]
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Resource": [
+                                        "arn:aws:sns:eu-west-2:775056359239:ConvertLambdaError"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Path": "/",
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "challenge",
+                            "dev",
+                            "eu-west-2",
+                            "lambdaRole"
+                        ]
+                    ]
+                }
+            }
+        },
+        "ConvertLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "vodchallengecode",
+                    "S3Key": "challenge.zip"
+                },
+                "FunctionName": "challenge-dev-convert",
+                "Handler": "handler.main",
+                "MemorySize": 128,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "IamRoleLambdaExecution",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.6",
+                "Timeout": 40,
+                "DeadLetterConfig": {
+                    "TargetArn": "arn:aws:sns:eu-west-2:775056359239:ConvertLambdaError"
+                }
+            },
+            "DependsOn": [
+                "ConvertLogGroup",
+                "IamRoleLambdaExecution"
+            ]
+        },
+        "ConvertLambdaVersion6e9w9tPnE5tqjAwFRo7o3pDY9hDwUGZZgYBFCMx6mw": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "FunctionName": {
+                    "Ref": "ConvertLambdaFunction"
+                },
+                "CodeSha256": "OO0pZnuXjSD0Cg8m7T0BXHUuxwjs4r/q8OHBkErrODQ="
+            }
+        },
+        "CronLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "vodchallengecode",
+                    "S3Key": "challenge.zip"
+                },
+                "FunctionName": "challenge-dev-cron",
+                "Handler": "cronconvert.main",
+                "MemorySize": 128,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "IamRoleLambdaExecution",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.6",
+                "Timeout": 40,
+                "DeadLetterConfig": {
+                    "TargetArn": "arn:aws:sns:eu-west-2:775056359239:ConvertLambdaError"
+                }
+            },
+            "DependsOn": [
+                "CronLogGroup",
+                "IamRoleLambdaExecution"
+            ]
+        },
+        "CronLambdaVersiondvT5Ko5vIzvQaV7GK2nepFkotf9nCGJpSIkzc6hfMk": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "FunctionName": {
+                    "Ref": "CronLambdaFunction"
+                },
+                "CodeSha256": "OO0pZnuXjSD0Cg8m7T0BXHUuxwjs4r/q8OHBkErrODQ="
+            }
+        },
+        "SlackLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "vodchallengecode",
+                    "S3Key": "challenge.zip"
+                },
+                "FunctionName": "challenge-dev-slack",
+                "Handler": "error_to_slack.main",
+                "MemorySize": 128,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "IamRoleLambdaExecution",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.6",
+                "Timeout": 40
+            },
+            "DependsOn": [
+                "SlackLogGroup",
+                "IamRoleLambdaExecution"
+            ]
+        },
+        "SlackLambdaVersionuA6mO7R7AeGOWbXko6Z48C34i6nppmHP75xpAgb0Gk": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "FunctionName": {
+                    "Ref": "SlackLambdaFunction"
+                },
+                "CodeSha256": "OO0pZnuXjSD0Cg8m7T0BXHUuxwjs4r/q8OHBkErrODQ="
+            }
+        },
+        "CronEventsRuleSchedule1": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "ScheduleExpression": "cron(0 5 * * ? *)",
+                "State": "ENABLED",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "CronLambdaFunction",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "cronSchedule"
+                    }
+                ]
+            }
+        },
+        "CronLambdaPermissionEventsRuleSchedule1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "CronLambdaFunction",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "CronEventsRuleSchedule1",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "S3BucketMoviesmetadata": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "BucketName": "moviesmetadata",
+                "NotificationConfiguration": {
+                    "LambdaConfigurations": [
+                        {
+                            "Event": "s3:ObjectCreated:*",
+                            "Function": {
+                                "Fn::GetAtt": [
+                                    "ConvertLambdaFunction",
+                                    "Arn"
+                                ]
+                            },
+                            "Filter": {
+                                "S3Key": {
+                                    "Rules": [
+                                        {
+                                            "Name": "suffix",
+                                            "Value": ".json"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "DependsOn": [
+                "ConvertLambdaPermissionMoviesmetadataS3"
+            ]
+        },
+        "ConvertLambdaPermissionMoviesmetadataS3": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "ConvertLambdaFunction",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "s3.amazonaws.com",
+                "SourceArn": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "arn:aws:s3:::moviesmetadata"
+                        ]
+                    ]
+                }
+            }
+        },
+        "SlackSnsSubscriptionConvertLambdaError": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+                "TopicArn": "arn:aws:sns:eu-west-2:775056359239:ConvertLambdaError",
+                "Protocol": "lambda",
+                "Endpoint": {
+                    "Fn::GetAtt": [
+                        "SlackLambdaFunction",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "SlackLambdaPermissionConvertLambdaErrorSNS": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "SlackLambdaFunction",
+                        "Arn"
+                    ]
+                },
+                "Action": "lambda:InvokeFunction",
+                "Principal": "sns.amazonaws.com",
+                "SourceArn": "arn:aws:sns:eu-west-2:775056359239:ConvertLambdaError"
+            }
+        }
+    },
+    "Outputs": {
+        "ConvertLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+                "Ref": "ConvertLambdaVersion6e9w9tPnE5tqjAwFRo7o3pDY9hDwUGZZgYBFCMx6mw"
+            }
+        },
+        "CronLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+                "Ref": "CronLambdaVersiondvT5Ko5vIzvQaV7GK2nepFkotf9nCGJpSIkzc6hfMk"
+            }
+        },
+        "SlackLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+                "Ref": "SlackLambdaVersionuA6mO7R7AeGOWbXko6Z48C34i6nppmHP75xpAgb0Gk"
+            }
+        }
+    }
+}
