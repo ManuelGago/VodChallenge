@@ -2,7 +2,7 @@ from subprocess import call
 import json
 import boto3
 import csv
-#comment
+
 print('Loading function')
 
 s3 = boto3.resource('s3')
