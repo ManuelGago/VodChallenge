@@ -2,7 +2,7 @@ from subprocess import call
 import json
 import boto3
 import csv
-
+#comment
 print('Loading function')
 
 s3 = boto3.resource('s3')
@@ -45,4 +45,3 @@ def main(event, context):
         print(e)
         print('Error running cron from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format('moviesmetadata'))
         raise e
-
